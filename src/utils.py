@@ -1,4 +1,3 @@
-
 def calculate_similarity(user_input, material_properties, weight_map=None):
     if weight_map is None:
         weight_map = {}

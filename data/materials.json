@@ -99,7 +99,6 @@
           "Tire Rim",
           "Roof",
           "Body",
-          "OutsideMirror",
           "Door Post",
           "Header Panel"
         ]
@@ -200,10 +199,9 @@
       "puncture_resistance": 60,
       "energy_absorption": 70,
       "recommended_parts": [
-        "Tire Rim",
+        "Tire",
         "Roof",
         "Body",
-        "OutsideMirror",
         "Door Post",
         "Header Panel"
       ]
@@ -402,7 +400,6 @@
       "recommended_parts": [
         "Tire",
         "Seats",
-        "Roof",
         "Tire Rim"
       ]
     },
@@ -450,7 +447,6 @@
       "energy_absorption": 70,
       "recommended_parts": [
         "Tire",
-        "Roof",
         "Seats",
         "Tire Rim"
       ]
@@ -646,7 +642,6 @@
       "energy_absorption": 60,
       "recommended_parts": [
         "Seats",
-        "OutsideMirror",
         "FrontGrill",
         "Wiper",
         "NumberPlate"
@@ -697,7 +692,6 @@
       "recommended_parts": [
         "Shield",
         "Sidebars",
-        "Roof",
         "OutsideMirror"
       ]
     },
@@ -745,7 +739,6 @@
       "energy_absorption": 85,
       "recommended_parts": [
         "Shield",
-        "Roof",
         "Sidebars",
         "OutsideMirror"
       ]
@@ -795,7 +788,6 @@
       "recommended_parts": [
         "Shield",
         "OutsideMirror",
-        "Roof",
         "Sidebars",
         "FrontGrill"
       ]
