@@ -14,7 +14,6 @@ if __name__ == "__main__":
         "crashworthiness": 0,
         "corrosion_resistance": 130,
         "impact_resistance": 80,
-        # Add more properties as needed
     }
     recommendations = recommend_material(user_input)
     print(recommendations)
