@@ -15,7 +15,6 @@ Create a cutting-edge material recommendation platform tailored for the manufact
     ```bash
     git clone https://github.com/krishnas005/Ecomaterial-Advisor-Backend.git
     cd Ecomaterial-Advisor-Backend
-    cd models
     ```
 
 2. Install dependencies:
