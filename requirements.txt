@@ -3,3 +3,5 @@ scikit-learn
 numpy
 flask
 joblib
+flask_cors
+deap

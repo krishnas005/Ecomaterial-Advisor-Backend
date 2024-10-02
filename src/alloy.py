@@ -2,8 +2,9 @@ import json
 import random
 import numpy as np
 from deap import base, creator, tools, algorithms
+from scipy.stats import norm
 
-# Load the dataset
+# Load the dataset from the JSON file
 with open('alloy_dataset.json', 'r') as f:
     dataset = json.load(f)
 
@@ -24,14 +25,14 @@ def comp_dict_to_list(comp_dict):
 
 # Function to convert composition list to dict
 def comp_list_to_dict(comp_list):
-    return {element: value for element, value in zip(all_elements, comp_list) if value > 0}
+    return {element: value for element, value in zip(all_elements, comp_list) if value > 0.005}  
 
 # Normalize the composition
 def normalize_composition(composition):
     total = sum(composition)
     return [c / total for c in composition]
 
-# Create property estimator using simple weighted average
+# Improved property estimator using weighted average and considering element interactions
 def estimate_properties(composition):
     properties = {prop: 0 for prop in properties_to_optimize}
     total_weight = 0
@@ -47,19 +48,30 @@ def estimate_properties(composition):
         for prop in properties:
             properties[prop] /= total_weight
     
+    # Consider element interactions (simplified model)
+    for i, elem1 in enumerate(all_elements):
+        for j, elem2 in enumerate(all_elements[i+1:], i+1):
+            interaction_factor = random.uniform(0.95, 1.05)  # Random interaction factor
+            for prop in properties:
+                properties[prop] *= interaction_factor ** (composition[i] * composition[j])
+    
     return properties
 
-# Fitness function
+# Fitness function with multi-objective optimization
 def evaluate(individual):
     composition = normalize_composition(individual)
     properties = estimate_properties(composition)
     
-    fitness = sum((properties[prop] - target_properties[prop])**2 for prop in properties_to_optimize)
+    # Calculate property differences
+    property_diffs = [(properties[prop] - target_properties[prop]) / target_properties[prop] for prop in properties_to_optimize]
+    
+    # Use root mean square error for overall fitness
+    fitness = np.sqrt(np.mean([diff**2 for diff in property_diffs]))
     
     # Penalize for using too many elements
-    num_elements = sum(1 for c in composition if c > 0.01)
+    num_elements = sum(1 for c in composition if c > 0.005)
     if num_elements > 5:
-        fitness += (num_elements - 5) * 100  # Add penalty for each extra element
+        fitness += (num_elements - 5) * 0.1  # Add penalty for each extra element
     
     return (fitness,)
 
@@ -70,11 +82,17 @@ creator.create("Individual", list, fitness=creator.FitnessMin)
 # Toolbox initialization
 toolbox = base.Toolbox()
 
-# Modified individual creation
+# Modified individual creation with bias towards common elements
 def create_individual():
     ind = [0] * len(all_elements)
-    for _ in range(random.randint(2, 5)):  # Randomly select 2 to 5 elements
-        ind[random.randint(0, len(all_elements) - 1)] = random.random()
+    num_elements = random.randint(2, 5)
+    
+    # Select elements with bias towards common ones
+    element_weights = [sum(material['composition'].get(elem, 0) for material in dataset) for elem in all_elements]
+    selected_elements = random.choices(range(len(all_elements)), weights=element_weights, k=num_elements)
+    
+    for i in selected_elements:
+        ind[i] = random.random()
     return creator.Individual(ind)
 
 toolbox.register("individual", create_individual)
@@ -82,12 +100,12 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 # Genetic operators
 toolbox.register("evaluate", evaluate)
-toolbox.register("mate", tools.cxTwoPoint)
+toolbox.register("mate", tools.cxBlend, alpha=0.5)
 toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.2)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
 # Main function to run the genetic algorithm
-def generate_alloy(target_props, pop_size=100, n_gen=200):
+def generate_alloy(target_props, pop_size=200, n_gen=300):
     global target_properties
     target_properties = target_props
 
@@ -98,7 +116,7 @@ def generate_alloy(target_props, pop_size=100, n_gen=200):
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    pop, logbook = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=n_gen, stats=stats, halloffame=hof, verbose=True)
+    pop, logbook = algorithms.eaSimple(pop, toolbox, cxpb=0.7, mutpb=0.2, ngen=n_gen, stats=stats, halloffame=hof, verbose=True)
 
     best_ind = tools.selBest(pop, k=1)[0]
     best_comp = normalize_composition(best_ind)
@@ -108,10 +126,6 @@ def generate_alloy(target_props, pop_size=100, n_gen=200):
 
 # Example usage
 if __name__ == "__main__":
-    # Save the dataset to a file
-    with open('alloy_dataset.json', 'w') as f:
-        json.dump(dataset, f)
-
     # Define target properties
     target_properties = {
         'tensile_strength': 800,
@@ -135,3 +149,23 @@ if __name__ == "__main__":
     print("\nTarget Properties:")
     for prop, value in target_properties.items():
         print(f"{prop}: {value:.2f}")
+
+    # Calculate and display property match percentages
+    print("\nProperty Match Percentages:")
+    for prop in properties_to_optimize:
+        match_percentage = (1 - abs(achieved_properties[prop] - target_properties[prop]) / target_properties[prop]) * 100
+        print(f"{prop}: {match_percentage:.2f}%")
+        
+        
+        
+# postman endpoint raw json format --> 
+# Endoint --> http://127.0.0.1:5000/api/generate-alloy
+# {
+#   "target_properties": {
+#     "tensile_strength": 800,
+#     "hardness": 250,
+#     "thermal_resistance": 500,
+#     "density": 7.5,
+#     "sustainability_score": 7.0
+#   }
+# }
